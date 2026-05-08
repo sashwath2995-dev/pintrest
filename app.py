@@ -1,5 +1,9 @@
 from fastapi import FastAPI, Request, HTTPException
-)
+from fastapi.responses import JSONResponse
+import requests
+import re
+
+app = FastAPI()
 
 # ---------------- CONFIG ----------------
 API_KEY = "uncommoncore"
@@ -11,9 +15,12 @@ HEADERS = {
 # ---------------- API KEY CHECK ----------------
 def verify_key(request: Request):
     key = request.headers.get("x-api-key")
+    
     if key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
-
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API Key"
+        )
 
 # ---------------- HOME ----------------
 @app.get("/")
@@ -29,7 +36,6 @@ def home():
             }
         }
     }
-
 
 # ---------------- PINTEREST DOWNLOADER ----------------
 @app.get("/pinterest")
@@ -47,8 +53,15 @@ def pinterest_downloader(url: str, request: Request):
 
         html = response.text
 
-        video_match = re.search(r'"contentUrl":"(https:[^\\"]+\\.mp4[^"]*)"', html)
-        image_match = re.search(r'"image":"(https:[^\\"]+)"', html)
+        video_match = re.search(
+            r'"contentUrl":"(https:[^\\"]+\\.mp4[^"]*)"',
+            html
+        )
+
+        image_match = re.search(
+            r'"image":"(https:[^\\"]+)"',
+            html
+        )
 
         video_url = None
         image_url = None
