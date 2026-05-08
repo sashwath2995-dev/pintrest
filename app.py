@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 import requests
 import re
@@ -15,39 +15,38 @@ HEADERS = {
 }
 
 # ================= API KEY =================
-def verify_key(request: Request):
-    key = request.headers.get("x-api-key")
+def verify_key(key: str):
 
     if key != API_KEY:
         raise HTTPException(
             status_code=401,
-            detail="Invalid or missing API Key"
+            detail="Invalid API Key"
         )
 
 # ================= HOME =================
 @app.get("/")
 def home():
+
     return {
         "creator": "@uncommonexe",
         "release_channel": "@uncommoncore",
         "status": "running",
         "endpoints": {
-            "pinterest": "/pinterest?url=PIN_URL",
-            "youtube": "/youtube?url=VIDEO_URL",
-            "instagram": "/instagram?url=POST_URL"
-        },
-        "headers": {
-            "x-api-key": "uncommoncore"
+            "pinterest": "/pinterest?url=PIN_URL&key=uncommoncore",
+            "youtube": "/youtube?url=VIDEO_URL&key=uncommoncore",
+            "instagram": "/instagram?url=POST_URL&key=uncommoncore"
         }
     }
 
 # ================= PINTEREST =================
 @app.get("/pinterest")
-def pinterest_downloader(url: str, request: Request):
-    verify_key(request)
+def pinterest_downloader(url: str, key: str):
+
+    verify_key(key)
 
     try:
         response = requests.get(url, headers=HEADERS)
+
         html = response.text
 
         video_match = re.search(
@@ -71,21 +70,26 @@ def pinterest_downloader(url: str, request: Request):
         )
 
         return {
+            "creator": "@uncommonexe",
             "status": True,
             "video": video_url,
             "image": image_url
         }
 
     except Exception as e:
-        return {
-            "error": str(e),
-            "trace": traceback.format_exc()
-        }
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": str(e),
+                "trace": traceback.format_exc()
+            }
+        )
 
 # ================= YOUTUBE =================
 @app.get("/youtube")
-def youtube_downloader(url: str, request: Request):
-    verify_key(request)
+def youtube_downloader(url: str, key: str):
+
+    verify_key(key)
 
     try:
         ydl_opts = {
@@ -99,6 +103,7 @@ def youtube_downloader(url: str, request: Request):
         formats = []
 
         for f in info.get("formats", []):
+
             file_url = f.get("url")
 
             if file_url:
@@ -108,6 +113,7 @@ def youtube_downloader(url: str, request: Request):
                 })
 
         return {
+            "creator": "@uncommonexe",
             "status": True,
             "title": info.get("title"),
             "thumbnail": info.get("thumbnail"),
@@ -116,18 +122,23 @@ def youtube_downloader(url: str, request: Request):
         }
 
     except Exception as e:
-        return {
-            "error": str(e),
-            "trace": traceback.format_exc()
-        }
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": str(e),
+                "trace": traceback.format_exc()
+            }
+        )
 
 # ================= INSTAGRAM =================
 @app.get("/instagram")
-def instagram_downloader(url: str, request: Request):
-    verify_key(request)
+def instagram_downloader(url: str, key: str):
+
+    verify_key(key)
 
     try:
         response = requests.get(url, headers=HEADERS)
+
         html = response.text
 
         video_match = re.search(
@@ -155,13 +166,17 @@ def instagram_downloader(url: str, request: Request):
         )
 
         return {
+            "creator": "@uncommonexe",
             "status": True,
             "video": video_url,
             "image": image_url
         }
 
     except Exception as e:
-        return {
-            "error": str(e),
-            "trace": traceback.format_exc()
-        }
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": str(e),
+                "trace": traceback.format_exc()
+            }
+        )
